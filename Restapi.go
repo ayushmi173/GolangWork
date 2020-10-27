@@ -1,10 +1,8 @@
 package main
 
-//https://github.com/bradtraversy/go_restapi/blob/master/main.go
 import (
 	"encoding/json"
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -43,7 +41,7 @@ func main() {
 	r.HandleFunc("/books/{id}", getBook).Methods("GET")
 	r.HandleFunc("/book", createBook).Methods("POST")
 	r.HandleFunc("/books/{id}", deleteBook).Methods("DELETE")
-	r.HandleFunc("/book", updateBook).Methods("PUT")
+	r.HandleFunc("/book/{id}", updateBook).Methods("PUT")
 
 	//Start the server
 	log.Fatal(http.ListenAndServe(":3000", r))
@@ -75,29 +73,32 @@ func createBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var b Book //taking struct in book variable
 	json.NewDecoder(r.Body).Decode(&b)
-	b.ID = strconv.Itoa(rand.Intn(10000000)) // temp id
+	b.ID = strconv.Itoa(len(books)+1) // temp id
 	books = append(books, b)
 	json.NewEncoder(w).Encode(b)
 }
 
 //update book
-
 func updateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	for index, item := range books {
 		if item.ID == params["id"] {
-			books = append(books[:index], books[index+1:]...)
 			var book Book
 			json.NewDecoder(r.Body).Decode(&book)
 			book.ID = params["id"]
-			books = append(books, book)
+			item.Author.Firstname = book.Author.Firstname
+			item.Author.Lastname = book.Author.Lastname
+			item.Title = book.Title
+			item.Isbn = book.Isbn
+			books[index] = book
 			json.NewEncoder(w).Encode(book)
 			return
 		}
 	}
 }
 
+//delete book
 func deleteBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
